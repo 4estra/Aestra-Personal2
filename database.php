@@ -2,11 +2,11 @@
 $host = 'localhost';
 $db_user = 'root';
 $db_pass = '';
-$db_name = 'bouquete_shop';
+$db_name = 'wb_bouquet';
 
 $conn = new mysqli($host, $db_user, $db_pass, $db_name);
 
-if ($conn) {
+if ($conn) {    
     $conn->set_charset('utf8mb4');
 }
 
