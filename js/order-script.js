@@ -247,18 +247,48 @@ function formatPhoneNumber(input) {
 const tomorrow = new Date();
 tomorrow.setDate(tomorrow.getDate() + 1);
 form.elements["tanggal-acara"].min = tomorrow.toISOString().split("T")[0];
+const ukuranSelect = document.getElementById("ukuran");
+function updateUkuranOptions() {
+  const category = kategoriBarangSelect.value;
+  const priceKey = hargaMulaiSelect.value;
+
+  if (!category || !priceKey || !optionsData[category] || !ukuranSelect) return;
+
+  const config = optionsData[category];
+
+  if (!config.showUkuran) {
+    ukuranGroup.style.display = "none";
+    ukuranSelect.disabled = true;
+    return;
+  }
+
+  const availableSizes = config.harga[priceKey]?.sizes;
+
+  ukuranSelect.innerHTML = "";
+  ukuranSelect.disabled = true;
+
+  if (availableSizes && availableSizes.length > 0) {
+    ukuranSelect.add(new Option("Pilih Ukuran", "", true, true));
+    availableSizes.forEach((size) => {
+      ukuranSelect.add(new Option(size, size));
+    });
+    ukuranSelect.disabled = false;
+  } else {
+    ukuranSelect.add(new Option("Ukuran tidak tersedia", "", true, true));
+  }
+}
 const optionsData = {
   "Buket Bunga": {
     label: "Jenis Buket",
     jenis: ["Buket Wisuda", "Buket Ulang Tahun", "Buket Anniversary"],
     harga: {
-      "15000-50000": "Rp 15.000 - 50.000",
-      100000: "Rp 100.000",
-      150000: "Rp 150.000",
-      200000: "Rp 200.000",
-      250000: "Rp 250.000",
-      350000: "Rp 350.000",
-      500000: "Rp 500.000",
+      "15000-50000": { text: "Rp 15.000 - 50.000", sizes: ["Small"] },
+      100000: { text: "Rp 100.000", sizes: ["Small", "Large"] },
+      150000: { text: "Rp 150.000", sizes: ["Small", "Large"] },
+      200000: { text: "Rp 200.000", sizes: ["Small", "Large", "Big"] },
+      250000: { text: "Rp 250.000", sizes: ["Small", "Large", "Big"] },
+      350000: { text: "Rp 350.000", sizes: ["Large", "Big"] },
+      500000: { text: "Rp 500.000", sizes: ["Large", "Big"] },
     },
     showUkuran: true,
     showNuansa: true,
@@ -267,7 +297,7 @@ const optionsData = {
     label: "Jenis Buket Balon",
     jenis: ["Balon Karakter", "Balon Angka/Huruf", "Balon Custom"],
     harga: {
-      "150000-185000": "Rp 150.000 - 185.000",
+      "150000-185000": { text: "Rp 150.000 - 185.000" },
     },
     showUkuran: false,
     showNuansa: true,
@@ -276,9 +306,9 @@ const optionsData = {
     label: "Jenis Hampers",
     jenis: ["Hampers Lebaran", "Hampers Natal", "Hampers Makanan Ringan"],
     harga: {
-      100000: "Rp 100.000",
-      250000: "Rp 250.000",
-      500000: "Rp 500.000",
+      100000: { text: "Rp 100.000" },
+      250000: { text: "Rp 250.000" },
+      500000: { text: "Rp 500.000" },
     },
     showUkuran: false,
     showNuansa: false,
@@ -288,10 +318,12 @@ const optionsData = {
 function updateFormFields(category) {
   if (!optionsData[category]) return;
   const config = optionsData[category];
-  jenisBuketLabel.textContent = config.label;
+  if (jenisBuketLabel) jenisBuketLabel.textContent = config.label;
+
   jenisBuketSelect.innerHTML =
-    '<option value="" disabled selected>Pilih Jenis...</option>';
+    '<option value="" disabled selected>Pilih Jenis</option>';
   config.jenis.forEach((opt) => jenisBuketSelect.add(new Option(opt, opt)));
+
   hargaMulaiSelect.innerHTML =
     '<option value="" disabled selected>Pilih Kategori Harga</option>';
   Object.entries(config.harga)
@@ -299,15 +331,28 @@ function updateFormFields(category) {
       (a, b) =>
         parseInt(a[0].split("-")[0], 10) - parseInt(b[0].split("-")[0], 10)
     )
-    .forEach(([val, txt]) => hargaMulaiSelect.add(new Option(txt, val)));
-  ukuranGroup.style.display = config.showUkuran ? "flex" : "none";
-  nuansaWarnaGroup.style.display = config.showNuansa ? "flex" : "none";
+    .forEach(([val, priceData]) =>
+      hargaMulaiSelect.add(new Option(priceData.text, val))
+    );
+  if (ukuranGroup)
+    ukuranGroup.style.display = config.showUkuran ? "flex" : "none";
+  if (nuansaWarnaGroup)
+    nuansaWarnaGroup.style.display = config.showNuansa ? "flex" : "none";
+
+  if (ukuranSelect) {
+    ukuranSelect.innerHTML =
+      '<option value="" disabled selected>Pilih Harga dulu</option>';
+    ukuranSelect.disabled = true;
+  }
   jenisBuketSelect.disabled = false;
 }
 
 kategoriBarangSelect.addEventListener("change", (e) =>
   updateFormFields(e.target.value)
 );
+if (hargaMulaiSelect) {
+  hargaMulaiSelect.addEventListener("change", updateUkuranOptions);
+}
 
 jenisBuketGroup.addEventListener("click", (e) => {
   if (jenisBuketSelect.disabled) {

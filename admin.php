@@ -29,6 +29,34 @@ if (isset($_SESSION['admin_loggedin']) && $_SESSION['admin_loggedin'] === true) 
         require_once 'database.php';
         $action = $_REQUEST['action'];
         switch ($action) {
+            case 'get_customers':
+                $sql = "SELECT id_pelanggan, nama_pelanggan, nomor_wa, alamat_lengkap, tanggal_ultah FROM pelanggan ORDER BY nama_pelanggan ASC";
+                $result = $conn->query($sql);
+                $customers = [];
+                while ($row = $result->fetch_assoc()) {
+                    $customers[] = $row;
+                }
+                echo json_encode(['success' => true, 'data' => $customers]);
+                break;
+
+            // DAN CASE BARU INI
+            case 'update_customer_birthday':
+                $data = json_decode(file_get_contents('php://input'), true);
+                if (isset($data['id_pelanggan'], $data['tanggal_ultah'])) {
+                    $id_pelanggan = $data['id_pelanggan'];
+                    $tanggal_ultah = !empty($data['tanggal_ultah']) ? $data['tanggal_ultah'] : NULL;
+
+                    $stmt = $conn->prepare("UPDATE pelanggan SET tanggal_ultah = ? WHERE id_pelanggan = ?");
+                    $stmt->bind_param("si", $tanggal_ultah, $id_pelanggan);
+                    if ($stmt->execute()) {
+                        echo json_encode(['success' => true, 'message' => 'Tanggal ultah berhasil diperbarui.']);
+                    } else {
+                        echo json_encode(['success' => false, 'message' => 'Gagal memperbarui tanggal ultah.']);
+                    }
+                } else {
+                    echo json_encode(['success' => false, 'message' => 'Data tidak lengkap.']);
+                }
+                break;
             case 'get_orders':
                 $status = isset($_GET['status']) && $_GET['status'] === 'selesai' ? 'Selesai' : 'Diproses';
                 $sql = "SELECT 
@@ -39,7 +67,7 @@ if (isset($_SESSION['admin_loggedin']) && $_SESSION['admin_loggedin'] === true) 
                         JOIN pelanggan pl ON p.id_pelanggan = pl.id_pelanggan
                         JOIN detail_pesanan dp ON p.id_pesanan = dp.id_pesanan
                         WHERE p.status = ?
-                        ORDER BY p.tanggal_order ASC";
+                        ORDER BY p.tanggal_order DESC";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("s", $status);
                 $stmt->execute();
@@ -108,12 +136,13 @@ if (isset($_SESSION['admin_loggedin']) && $_SESSION['admin_loggedin'] === true) 
                     $newFileName = uniqid() . '-' . basename($file['name']);
                     $newFilePath = $uploadDir . $newFileName;
                     if (move_uploaded_file($file['tmp_name'], $newFilePath)) {
-                        $stmt = $conn->prepare("INSERT INTO produk (id_kategori, gambar, unggulan) VALUES (?, ?, 0)");
-                        $stmt->bind_param("is", $id_kategori, $newFilePath);
+                        $stmt = $conn->prepare("INSERT INTO produk (id_kategori, gambar, unggulan) VALUES (?, ?, ?)");
+                        $unggulan_default = 0;
+                        $stmt->bind_param("isi", $id_kategori, $newFilePath, $unggulan_default);
                         if ($stmt->execute()) {
                             echo json_encode(['success' => true, 'message' => 'Produk baru berhasil ditambahkan.']);
                         } else {
-                            echo json_encode(['success' => false, 'message' => 'Gagal menyimpan ke database.']);
+                            echo json_encode(['success' => false, 'message' => 'Gagal menyimpan ke database: ' . $stmt->error]);
                         }
                     } else {
                         echo json_encode(['success' => false, 'message' => 'Gagal upload file.']);
@@ -311,16 +340,16 @@ if (isset($_SESSION['admin_loggedin']) && $_SESSION['admin_loggedin'] === true):
                 </div>
 
                 <nav class="dashboard-nav">
-                    <button class="tab-btn active" data-tab="pesanan">Log Pesanan</button>
-                    <button class="tab-btn" data-tab="produk">Manajemen Produk</button>
+                    <button class="tab-btn active" data-tab="pesanan"><i class="fa-solid fa-list"></i> Log Pesanan</button>
+                    <button class="tab-btn" data-tab="produk"><i class="fa-solid fa-box"></i> Manajemen Produk</button>
                 </nav>
 
                 <div id="panel-pesanan" class="dashboard-panel active">
                     <div class="card">
                         <div class="card-content">
                             <nav class="sub-nav" id="pesanan-sub-nav">
-                                <button class="sub-tab-btn active" data-subtab="pesanan-aktif">Pesanan Aktif</button>
-                                <button class="sub-tab-btn" data-subtab="pesanan-selesai">Riwayat Pesanan Selesai</button>
+                                <button class="sub-tab-btn active" data-subtab="pesanan-aktif"><i class="fa-solid fa-clipboard-list"></i> Pesanan Aktif</button>
+                                <button class="sub-tab-btn" data-subtab="pesanan-selesai"><i class="fa-solid fa-clipboard-check"></i> Riwayat Pesanan Selesai</button>
                             </nav>
 
                             <div id="subpanel-pesanan-aktif" class="sub-panel active" style="overflow-x: auto;">
@@ -338,33 +367,49 @@ if (isset($_SESSION['admin_loggedin']) && $_SESSION['admin_loggedin'] === true):
                     <div class="card">
                         <div class="card-content">
                             <nav class="sub-nav" id="produk-sub-nav">
-                                <button class="sub-tab-btn active" data-subtab="daftar">Daftar Produk</button>
-                                <button class="sub-tab-btn" data-subtab="tambah">Menambahkan Produk</button>
+                                <button class="sub-tab-btn active" data-subtab="daftar-produk"><i class="fa-solid fa-box"></i> Manajemen Produk</button>
+                                <button class="sub-tab-btn" data-subtab="data-pelanggan"><i class="fa-solid fa-user"></i> Data Pelanggan</button>
                             </nav>
-                            <div id="subpanel-daftar" class="sub-panel active">
-                                <p style="margin-top:0; margin-bottom: 1.5rem; color: #6c757d; font-style: italic;">Drag &
-                                    drop gambar untuk menukar posisi/urutan produk.</p>
-                                <div id="product-list-container">
-                                    <p>Memuat produk...</p>
+
+                            <div id="subpanel-daftar-produk" class="sub-panel active">
+                                <div class="product-management-layout">
+                                    <div class="product-list-wrapper">
+                                        <p class="section-subtitle">Drag & drop gambar untuk menukar posisi/urutan produk.</p>
+                                        <div id="product-list-container">
+                                            <p>Memuat produk...</p>
+                                        </div>
+                                    </div>
+                                    <div class="add-product-wrapper">
+                                        <h3 class="section-title">Tambah Produk Baru</h3>
+                                        <p class="section-subtitle">Gambar akan ter-upload di folder images.</p>
+                                        <form id="add-product-form">
+                                            <div class="form-group">
+                                                <label for="new-product-category">Pilih Kategori</label>
+                                                <select id="new-product-category" required></select>
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Upload Gambar</label>
+                                                <input type="file" id="new-product-image" accept="image/*" required>
+                                            </div>
+                                            <div class="hero-buttons"><button type="submit" class="btn btn-outline">
+                                                    <i class="fa-solid fa-folder-plus"></i> Tambah Produk
+                                                </button>
+                                            </div>
+
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
-                            <div id="subpanel-tambah" class="sub-panel">
-                                <p style="margin-top:0; margin-bottom: 1.5rem; color: #6c757d; font-style: italic;">Gambar
-                                    akan ter-upload di folder /images/ pada File Manager Hosting Anda.</p>
-                                <form id="add-product-form" style="margin-top:1.5rem;">
-                                    <div class="form-group"><label for="new-product-category">Pilih Kategori</label><select
-                                            id="new-product-category" required></select></div>
-                                    <div class="form-group"><label>Upload Gambar</label><input type="file"
-                                            id="new-product-image" accept="image/*" required>
-                                    </div>
-                                    <div class="hero-buttons"> <button type="submit" class="btn btn-primary"><i class="fa-solid fa-plus"></i>Tambah Produk</button></div>
 
-                                </form>
+                            <div id="subpanel-data-pelanggan" class="sub-panel">
+                                <p class="section-subtitle" style="margin-top:0;">Klik pada kolom tanggal untuk mengatur atau mengubah ulang tahun pelanggan.</p>
+                                <div id="customer-table-container" style="overflow-x: auto;">
+                                    <p>Memuat data pelanggan...</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
         </main>
         <div id="image-viewer" class="modal"><span class="close">&times;</span><img class="modal-content-image"
                 id="full-image"></div>
@@ -373,7 +418,7 @@ if (isset($_SESSION['admin_loggedin']) && $_SESSION['admin_loggedin'] === true):
 
     </html>
 <?php else: ?>
-    <?php //
+    <?php
     ?>
     <!DOCTYPE html>
     <html lang="id">

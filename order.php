@@ -69,16 +69,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
 
         $ref_image_paths = [];
+
         if (isset($_FILES['file-upload'])) {
             $upload_dir = 'uploads/';
             if (!is_dir($upload_dir)) mkdir($upload_dir, 0755, true);
+
+            $unique_files = [];
+
             foreach ($_FILES['file-upload']['name'] as $key => $name) {
                 if ($_FILES['file-upload']['error'][$key] === UPLOAD_ERR_OK) {
-                    $tmp_name = $_FILES['file-upload']['tmp_name'][$key];
-                    $ref_filename = 'ref-' . date('Ymd-His') . '-' . uniqid() . '-' . basename($name);
-                    $ref_path = $upload_dir . $ref_filename;
-                    if (move_uploaded_file($tmp_name, $ref_path)) {
-                        $ref_image_paths[] = $ref_path;
+                    $file_hash = md5_file($_FILES['file-upload']['tmp_name'][$key]);
+
+                    if (!in_array($file_hash, $unique_files)) {
+                        $unique_files[] = $file_hash;
+
+                        $tmp_name = $_FILES['file-upload']['tmp_name'][$key];
+                        $ref_filename = 'ref-' . date('Ymd-His') . '-' . uniqid() . '-' . basename($name);
+                        $ref_path = $upload_dir . $ref_filename;
+
+                        if (move_uploaded_file($tmp_name, $ref_path)) {
+                            $ref_image_paths[] = $ref_path;
+                        }
                     }
                 }
             }
@@ -242,19 +253,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <div class="form-group" id="nuansa_warna_group"><label for="nuansa_warna">Nuansa Warna</label><input
                                 type="text" id="nuansa_warna" name="nuansa_warna" class="input-field"
                                 placeholder="Contoh: Pastel, Earth tone"></div>
-                        <div class="form-group" id="ukuran_group"><label for="ukuran">Ukuran</label><select id="ukuran"
-                                name="ukuran"
-                                class="input-field"
-                                required>
-                                <option value="" disabled selected>Pilih Ukuran</option>
-                                <option value="Small">Small</option>
-                                <option value="large">Large</option>
-                                <option value="Big">Big</option>
-                            </select>
-                            <p class="error-message" id="ukuran-error"></p>
-                        </div>
-                    </div>
-                    <div class="form-grid grid-col-2">
                         <div class="form-group"><label for="harga_mulai">Kategori Harga</label><select id="harga_mulai"
                                 name="harga_mulai"
                                 class="input-field"
@@ -262,6 +260,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <option value="" disabled selected>Pilih Kategori Harga</option>
                             </select>
                             <p class="error-message" id="harga_mulai-error"></p>
+                        </div>
+                    </div>
+                    <div class="form-grid grid-col-2">
+                        <div class="form-group" id="ukuran_group">
+                            <label for="ukuran">Ukuran</label>
+                            <select id="ukuran" name="ukuran" class="input-field" required disabled>
+                                <option value="" disabled selected>Pilih Kategori Harga dulu</option>
+                            </select>
+                            <p class="error-message" id="ukuran-error"></p>
                         </div>
                         <div class="form-group"><label for="tanggal-acara">Untuk Tanggal Berapa</label><input type="date"
                                 name="tanggal-acara"
@@ -375,8 +382,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <h2>Konfirmasi Pesanan</h2>
                 <p>Pesanan Anda sudah siap dikirim ke admin. Lanjutkan?</p>
                 <div class="modal-actions">
-                    <button id="btn-confirm" class="btn btn-outline">Ya, Lanjutkan</button>
-                    <button id="btn-cancel-modal" class="btn btn-cancel-modal">Batal</button>
+                    <button id="btn-confirm" class="btn btn-outline"><i class="fa-solid fa-circle-check"></i>Lanjutkan</button>
+                    <button id="btn-cancel-modal" class="btn btn-cancel-modal"><i class="fa-solid fa-circle-xmark"></i>Batal</button>
                 </div>
             </div>
             <div id="modal-view-loading" style="display: none;">
@@ -388,19 +395,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <h2>Berhasil!</h2>
                 <p>Pesanan Anda telah terkirim. Admin kami akan segera menghubungi Anda via WhatsApp untuk konfirmasi.</p>
                 <div id="receipt-image-container"></div>
-            </div>
-            <div id="modal-view-error" style="display: none;">
-                <h2>Gagal</h2>
-                <p id="error-text">Maaf, terjadi kesalahan.</p>
-                <div class="modal-actions">
-                    <button id="btn-close-error-modal" class="btn btn-primary">Tutup</button>
+                <div class="modal-actions mt-4">
+                    <a href="index.php" id="btn-back-to-home" class="btn btn-outline"><i class="fa-solid fa-house"></i> Kembali ke Beranda</a>
+                </div>
+                <div id="modal-view-error" style="display: none;">
+                    <h2>Gagal</h2>
+                    <p id="error-text">Maaf, terjadi kesalahan.</p>
+                    <div class="modal-actions">
+                        <button id="btn-close-error-modal" class="btn btn-primary">Tutup</button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div id="zoom-modal"><span id="close-zoom-btn">&times;</span><img id="zoomed-receipt-image"></div>
-    <script src="js/order-script.js"></script>
+        <div id="zoom-modal"><span id="close-zoom-btn">&times;</span><img id="zoomed-receipt-image"></div>
+        <script src="js/order-script.js"></script>
 </body>
 
 </html>

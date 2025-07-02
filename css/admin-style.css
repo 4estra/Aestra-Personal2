@@ -632,3 +632,77 @@ h2 {
 .btn-login:hover {
   background-color: var(--primary);
 }
+/* CSS untuk Layout Manajemen Produk Baru */
+.product-management-layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.product-list-wrapper {
+  flex: 3; /* Kolom daftar produk lebih besar */
+  min-width: 0;
+}
+
+.add-product-wrapper {
+  flex: 1; /* Kolom form tambah lebih kecil */
+  background-color: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  position: sticky; /* Membuat form tetap terlihat saat scroll */
+  top: 20px;
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--primary);
+}
+
+.section-subtitle {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #6c757d;
+  font-style: italic;
+  font-size: 0.9rem;
+}
+
+#customer-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+#customer-table th,
+#customer-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border-color);
+  text-align: left;
+  font-size: 0.9rem;
+  vertical-align: middle;
+}
+
+#customer-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+}
+
+#customer-table input[type="date"] {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: "Inter", sans-serif;
+}
+
+/* Penyesuaian untuk layar kecil */
+@media (max-width: 1024px) {
+  .product-management-layout {
+    flex-direction: column;
+  }
+  .add-product-wrapper {
+    position: static;
+    width: 100%;
+  }
+}

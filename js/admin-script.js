@@ -3,8 +3,12 @@ document.addEventListener("DOMContentLoaded", () => {
   let completedOrdersCache = [];
   let productsCache = [];
   let categoriesCache = [];
+  let customersCache = [];
   let draggedItem = null;
 
+  const customerTableContainer = document.getElementById(
+    "customer-table-container"
+  );
   const activeOrderContainer = document.getElementById(
     "subpanel-pesanan-aktif"
   );
@@ -50,13 +54,16 @@ document.addEventListener("DOMContentLoaded", () => {
       completedOrdersResult,
       productsResult,
       categoriesResult,
+      customersResult, // <-- Tambahkan ini
     ] = await Promise.all([
       fetchAPI("get_orders&status=aktif"),
       fetchAPI("get_orders&status=selesai"),
       fetchAPI("get_products"),
       fetchAPI("get_categories"),
+      fetchAPI("get_customers"), // <-- Tambahkan ini
     ]);
 
+    customersCache = customersResult.data || [];
     activeOrdersCache = activeOrdersResult.data || [];
     completedOrdersCache = completedOrdersResult.data || [];
     productsCache = productsResult.data || [];
@@ -71,10 +78,69 @@ document.addEventListener("DOMContentLoaded", () => {
     await loadInitialData();
   }
 
+  function renderCustomerTable() {
+    if (!customerTableContainer) return;
+    if (customersCache.length === 0) {
+      customerTableContainer.innerHTML = `<p>Belum ada data pelanggan.</p>`;
+      return;
+    }
+
+    let tableHTML = `<table id="customer-table"><thead><tr>
+        <th>Nama Pelanggan</th><th>No. WhatsApp</th><th>Alamat</th><th>Tanggal Ultah</th>
+    </tr></thead><tbody>`;
+
+    customersCache.forEach((customer) => {
+      tableHTML += `
+            <tr data-id="${customer.id_pelanggan}">
+                <td>${customer.nama_pelanggan || "-"}</td>
+                <td><a href="https://wa.me/62${customer.nomor_wa.replace(
+                  /[^0-9]/g,
+                  ""
+                )}" target="_blank">${customer.nomor_wa}</a></td>
+                <td>${customer.alamat_lengkap || "-"}</td>
+                <td>
+                    <input type="date" class="birthday-input" value="${
+                      customer.tanggal_ultah || ""
+                    }">
+                </td>
+            </tr>
+        `;
+    });
+
+    tableHTML += `</tbody></table>`;
+    customerTableContainer.innerHTML = tableHTML;
+  }
+  if (customerTableContainer) {
+    customerTableContainer.addEventListener("change", async (e) => {
+      if (e.target.classList.contains("birthday-input")) {
+        const row = e.target.closest("tr");
+        const id_pelanggan = row.dataset.id;
+        const tanggal_ultah = e.target.value;
+
+        const result = await fetchAPI("update_customer_birthday", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id_pelanggan, tanggal_ultah }),
+        });
+
+        if (result.success) {
+          // Beri feedback visual sederhana
+          e.target.style.border = "1px solid var(--success)";
+          setTimeout(() => {
+            e.target.style.border = "1px solid #ccc";
+          }, 2000);
+        } else {
+          e.target.style.border = "1px solid var(--danger)";
+        }
+      }
+    });
+  }
+
   function renderAllTabs() {
     renderOrderTable(activeOrderContainer, activeOrdersCache, true);
     renderOrderTable(completedOrderContainer, completedOrdersCache, false);
     renderProducts();
+    renderCustomerTable();
   }
 
   function updateHeaderStats() {
@@ -106,7 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     let tableHTML = `<table id="order-table"><thead><tr>
-                <th>Tgl Order</th><th>Pemesan</th><th>Kontak</th><th>Detail Pesanan</th><th>Tgl Acara</th><th>Pengambilan</th><th>Aksi</th>
+                <th>Tanggal Order</th><th>Pemesan</th><th>Kontak WhatsApp</th><th>Detail Pesanan</th><th>Tamggal Acara</th><th>Pengambilan</th><th>Aksi</th>
             </tr></thead><tbody>`;
 
     orders.forEach((order) => {
@@ -294,11 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
       productCard.querySelector(".product-image-input").click();
     }
     if (e.target.closest(".btn-delete-product")) {
-      if (
-        confirm(
-          "Anda yakin ingin menghapus produk ini secara permanen?"
-        )
-      ) {
+      if (confirm("Anda yakin ingin menghapus produk ini secara permanen?")) {
         const result = await fetchAPI("delete_product", {
           method: "POST",
           headers: {
