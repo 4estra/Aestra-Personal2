@@ -293,6 +293,19 @@ const optionsData = {
     showUkuran: true,
     showNuansa: true,
   },
+
+  "Buket Uang": {
+    label: "Jenis Buket Uang",
+    jenis: ["Buket Wisuda", "Buket Ulang Tahun", "Buket Anniversary"],
+    harga: {
+      85000: { text: "Rp 85.000", sizes: ["10 Lembar"] },
+      13500: { text: "Rp 135.000", sizes: ["20 lembar"] },
+      250000: { text: "Rp 250.000", sizes: ["50 Lembar"] },
+    },
+    showUkuran: true,
+    showNuansa: true,
+  },
+
   "Buket Balon": {
     label: "Jenis Buket Balon",
     jenis: ["Balon Karakter", "Balon Angka/Huruf", "Balon Custom"],

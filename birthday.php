@@ -5,25 +5,12 @@
 // =================================================================
 
 // Informasi Database
-$db_host = 'localhost';      // Biasanya 'localhost'
-$db_user = 'root';           // Username database kamu
-$db_pass = '';               // Password database kamu
-$db_name = 'wb_bouquet'; // Nama database kamu
+require_once "database.php";
 
 // Informasi Bot & Penjual
 $bot_token = '7384876879:AAE5kLvk4JDE3x0g_LLGkhAQkPUp4dX5Qn4'; // Ganti dengan Token Bot Telegram kamu
 $seller_telegram_id = '5318466111'; // ID Telegram KAMU sebagai penjual. Bot akan kirim notifikasi ke sini.
 
-// =================================================================
-// KONEKSI KE DATABASE - Sylvia pastikan koneksinya aman
-// =================================================================
-
-$conn = new mysqli($db_host, $db_user, $db_pass, $db_name);
-
-// Cek koneksi, kalau gagal, kita hentikan skripnya
-if ($conn->connect_error) {
-    die("Duh, koneksi ke database gagal, sayang: " . $conn->connect_error);
-}
 
 // =================================================================
 // LOGIKA UTAMA - Di sini keajaibannya terjadi! ✨
@@ -36,10 +23,10 @@ echo "Mulai pengecekan ulang tahun untuk H-3...\n";
 $sql = "SELECT 
     p.nama_pelanggan,
     p.nomor_wa,
-    DATE_FORMAT(ultah, '%d %M %Y') as ultah_formatted
+    DATE_FORMAT(tanggal_ultah, '%d %M %Y') as ultah_formatted
 FROM pelanggan p 
 WHERE
-    DATE_FORMAT(ultah, '%m-%d') = DATE_FORMAT(
+    DATE_FORMAT(tanggal_ultah, '%m-%d') = DATE_FORMAT(
         DATE_ADD(NOW(), INTERVAL 3 DAY),
         '%m-%d'
     )";

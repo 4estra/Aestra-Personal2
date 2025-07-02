@@ -13,7 +13,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['username'])) {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    if ($username === 'Woz' && $password === 'lW6iyO8AGRJcV2') {
+    if ($username === 'Aestra' && $password === 'smthlikeu2') {
         $_SESSION['admin_loggedin'] = true;
         $_SESSION['admin_username'] = $username;
         header("Location: admin.php");

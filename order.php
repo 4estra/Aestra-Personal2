@@ -1,7 +1,7 @@
 <?php
 require_once 'database.php';
-define('TELEGRAM_BOT_TOKEN', '7870425994:AAHdBwDSwq3B84ERYSXa78YUMcG27azBrEc');
-define('TELEGRAM_CHAT_ID', '6215262055');
+define('TELEGRAM_BOT_TOKEN', '7758666485:AAGaRq-K0AIzllWAL-JlAlD6dFI_7lDOu-k');
+define('TELEGRAM_CHAT_ID', '5318466111');
 
 function sendTelegramReceipt($caption, $photo_path)
 {
@@ -230,6 +230,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 id="kategori_barang" name="kategori_barang" class="input-field" required>
                                 <option value="" disabled selected>Pilih Kategori</option>
                                 <option value="Buket Bunga">Buket Bunga</option>
+                                <option value="Buket Uang">Buket Uang</option>
                                 <option value="Buket Balon">Buket Balon</option>
                                 <option value="Hampers">Hampers</option>
                             </select>

@@ -3,7 +3,6 @@ $host = 'localhost';
 $db_user = 'root';
 $db_pass = '';
 $db_name = 'wb_bouquet';
-$db_name = 'wb_db';
 
 $conn = new mysqli($host, $db_user, $db_pass, $db_name);
 
